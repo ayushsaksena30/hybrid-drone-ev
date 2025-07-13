@@ -90,6 +90,24 @@ function formatTimeMinutes(minutes) {
   return result.trim();
 }
 
+// Function to get custom display messages for each point type
+function getTypeDisplayMessage(type) {
+  switch (type) {
+    case "HQ":
+      return "Headquarters";
+    case "Truck":
+      return "Truck Delivery";
+    case "Launch":
+      return "Launch Site";
+    case "DroneDelivery":
+      return "Drone Delivery";
+    case "Landing":
+      return "Landing Site";
+    default:
+      return type;
+  }
+}
+
 // Nearest Neighbor TSP for truck route optimization
 function nearestNeighborRoute(hq, deliveries) {
   const unvisited = deliveries.slice();
@@ -420,8 +438,8 @@ export default function PathPlanning() {
   const totalTripTime = truckTimeToLaunch + Math.max(droneTripTime, truckTimeAfter);
 
   // --- Carbon Emission Calculation (Corrected) ---
-  const TRUCK_EMISSION_PER_KM = 0.746; // kg CO2/km
-  const DRONE_EMISSION_PER_KM = 0.062; // kg CO2/km
+  const TRUCK_EMISSION_PER_KM = 1.746; // kg CO2/km
+  const DRONE_EMISSION_PER_KM = 0.002; // kg CO2/km
 
   // Calculate the actual distances for both scenarios
   const droneDeliveryDistance = haversineDistance(launchPoint[0], launchPoint[1], droneDelivery.latitude, droneDelivery.longitude);
@@ -522,7 +540,7 @@ export default function PathPlanning() {
           }}>{carbonReduction.toFixed(1)}%</div>
           <div style={{ fontSize: "0.97em", color: "#666" }}>
             <span style={{marginRight: 16}}>
-              <span style={{fontWeight: 500}}>Carbon Emission: </span>
+              <span style={{fontWeight: 500}}>Carbon Emission Reduced: </span>
               {carbonEmission.toFixed(2)} kg CO₂
             </span>
           </div>
@@ -535,8 +553,8 @@ export default function PathPlanning() {
           boxShadow: "0 2px 8px #0001"
         }}>
           <div style={{fontWeight: 600, fontSize: "1.1em", marginBottom: 4}}>
-            Estimated Time
-            {xgbResult && xgbResult.time && <span style={{ fontSize: 14, marginLeft: 8, color: "#d32f2f" }}>🧠 ML Enhanced</span>}
+            Estimated Total Time
+            {xgbResult && xgbResult.time && <span style={{ fontSize: 14, marginLeft: 8, color: "#d32f2f" }}></span>}
           </div>
           <div style={{
             fontSize: "2em",
@@ -544,11 +562,10 @@ export default function PathPlanning() {
             color: xgbResult && xgbResult.time ? "#d32f2f" : "#1976d2"
           }}>{formatTimeMinutes(totalTripTime)}</div>
           <div style={{ fontSize: "1em", color: "#1976d2", marginTop: 6 }}>
-            <b>Time Saved:</b> {timeSaved > 0 ? formatTimeMinutes(timeSaved) : '0 sec'}
           </div>
         </div>
         
-        {mlPredictedDelivery && (
+        {mlPredictedDelivery && xgbResult && (
           <div style={{
             background: "#fff3e0",
             borderRadius: 12,
@@ -558,29 +575,25 @@ export default function PathPlanning() {
             border: "2px solid #ff9800"
           }}>
             <div style={{fontWeight: 600, fontSize: "1.1em", marginBottom: 4, color: "#e65100"}}>
-              ML model Prediction
+              Drone Delivery Prediction
             </div>
             <div style={{fontSize: "1em", color: "#666"}}>
-              Delivery at <strong style={{color: "#e65100"}}>{mlPredictedDelivery.latitude}, {mlPredictedDelivery.longitude}</strong> was selected by AI for drone delivery
+              <div style={{marginBottom: 8}}>
+                <strong style={{color: "#e65100"}}>Location:</strong> ({mlPredictedDelivery.latitude}, {mlPredictedDelivery.longitude})
+              </div>
+              <div style={{marginBottom: 8}}>
+                <strong style={{color: "#e65100"}}>Drone ID:</strong> {xgbResult.drone && xgbResult.drone.drone_id ? xgbResult.drone.drone_id : (xgbResult.droneId || 'N/A')}
+              </div>
+              <div>
+                <strong style={{color: "#e65100"}}>Predicted Time:</strong> {xgbResult.predicted_time_minutes ? Number(xgbResult.predicted_time_minutes).toFixed(2) : (xgbResult.time ? Number(xgbResult.time).toFixed(2) : 'N/A')} min
+              </div>
             </div>
-           
           </div>
         )}
         {!mlPredictedDelivery && (
           <div style={{background: "#ffeaea", borderRadius: 12, padding: "16px 20px", marginBottom: 18, border: "2px solid #e57373"}}>
             <div style={{fontWeight: 600, color: "#d32f2f"}}>No ML Prediction</div>
             <div style={{color: "#888"}}>Fallback logic was used for drone delivery selection.</div>
-          </div>
-        )}
-        {xgbResult && (
-          <div style={{ background: "#e3f2fd", borderRadius: 12, padding: "16px 20px", marginBottom: 18 }}>
-            <div style={{ fontWeight: 600, fontSize: "1.1em", marginBottom: 4, color: "#1976d2" }}>
-              🧠 Model Prediction
-            </div>
-            <div style={{ fontSize: "1em", color: "#333" }}>
-              <b>Drone ID:</b> {xgbResult.drone && xgbResult.drone.drone_id ? xgbResult.drone.drone_id : (xgbResult.droneId || 'N/A')} <br />
-              <b>Predicted Time:</b> {xgbResult.predicted_time_minutes ? Number(xgbResult.predicted_time_minutes).toFixed(2) : (xgbResult.time ? Number(xgbResult.time).toFixed(2) : 'N/A')} min
-            </div>
           </div>
         )}
         <div style={{
@@ -618,7 +631,7 @@ export default function PathPlanning() {
                     lineHeight: "22px",
                     marginRight: 10
                   }}>{pt.label}</span>
-                  {pt.type}
+                  {getTypeDisplayMessage(pt.type)}
                 </div>
                 {/* Arrow and time to next stop */}
                 {idx < traversalPoints.length - 1 && (
@@ -683,7 +696,7 @@ export default function PathPlanning() {
             </div>
      
         <div style={{marginTop: 8}}>
-          <b>Wind Speed (drone route):</b>
+          <b>Average Wind Speed (drone route):</b>
           {windLoading && <span style={{color: '#888'}}> Loading...</span>}
           {windError && <span style={{color: 'red'}}> {windError}</span>}
           {windSpeed !== null && !windLoading && !windError && (

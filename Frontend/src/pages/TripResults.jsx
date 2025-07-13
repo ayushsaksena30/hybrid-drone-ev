@@ -408,6 +408,18 @@ export default function TripResults() {
     }
   };
 
+  const handleClearAllTrips = () => {
+    if (window.confirm("Are you sure you want to clear all trips? This action cannot be undone.")) {
+      localStorage.removeItem("allTrips");
+      localStorage.removeItem("latestTrip");
+      localStorage.removeItem("xgbResult");
+      setTrips([]);
+      setSelected(0);
+      setFinishedDeliveries(new Set());
+      alert("All trips have been cleared successfully!");
+    }
+  };
+
   if (!trips.length) {
     return <p style={{ padding: "20px" }}>No trip data found. Please add drones and deliveries.</p>;
   }
@@ -617,7 +629,29 @@ export default function TripResults() {
   return (
     <div className="path-planning-page">
       <div className="left-panel">
-        <h2>All Trips</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+          <h2>All Trips</h2>
+          {trips.length > 0 && (
+            <button
+              onClick={handleClearAllTrips}
+              style={{
+                background: "#d32f2f",
+                color: "#fff",
+                border: "none",
+                borderRadius: 6,
+                padding: "8px 16px",
+                fontWeight: 600,
+                fontSize: "0.9em",
+                cursor: "pointer",
+                transition: "background 0.2s"
+              }}
+              onMouseOver={(e) => e.target.style.background = "#b71c1c"}
+              onMouseOut={(e) => e.target.style.background = "#d32f2f"}
+            >
+              Clear All
+            </button>
+          )}
+        </div>
         <div style={{ maxHeight: 400, overflowY: 'auto', marginBottom: 24 }}>
           {trips.map((t, i) => {
             const carbonReduction = Number(t.carbonReduction);
@@ -633,7 +667,7 @@ export default function TripResults() {
               >
                 <div><b>Trip #{trips.length - i}</b> &nbsp;|&nbsp; {new Date(t.createdAt).toLocaleString()}</div>
                 <div style={{ fontSize: 13, color: '#555' }}>
-                  Drone: {droneId} | Truck Deliveries: {t.truckDeliveries ? t.truckDeliveries.length : 0} | Carbon Reduction: {isFinite(carbonReduction) ? carbonReduction.toFixed(1) : 'N/A'}% | Time: {isFinite(totalTripTime) ? formatTimeMinutes(totalTripTime) : 'N/A'}
+                  Drone ID: {droneId} | Truck Delivery Locations: {t.truckDeliveries ? t.truckDeliveries.length : 0} | Carbon Reduction: {isFinite(carbonReduction) ? carbonReduction.toFixed(1) : 'N/A'}% | Time: {isFinite(totalTripTime) ? formatTimeMinutes(totalTripTime) : 'N/A'}
                 </div>
               </div>
             );
