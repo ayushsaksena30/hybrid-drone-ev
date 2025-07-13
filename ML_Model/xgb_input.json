@@ -1,10 +1,10 @@
 {
-  "distance": 71901.05549359781,
-  "wind_speed": 1.32,
-  "position_x": 78,
-  "position_y": 12.46,
+  "distance": 732.900516292657,
+  "wind_speed": 2.23,
+  "position_x": 81.006147,
+  "position_y": 26.841291,
   "position_z": 100,
   "speed": 10,
-  "payload": 1000,
+  "payload": 800,
   "angular": 0.5
 }
